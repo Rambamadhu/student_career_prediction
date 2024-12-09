@@ -74,7 +74,10 @@ features = scaler.fit_transform(features)
 
 # Predict
 if st.button("Predict Role"):
-    prediction = model.predict(features)
-    st.subheader(f"Predicted Role: {prediction[0]}")
+    prediction = model.predict(features)  # Encoded prediction
+    # Reverse the encoding to get the original role
+    predicted_role = label_encoders['Role'].inverse_transform(prediction)
+    st.subheader(f"Predicted Role: {predicted_role[0]}")
+
 
 
