@@ -1,82 +1,53 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+import numpy as np
 
-# Load the trained model
-model_path = "fine_tuned_career_model.pkl"
-model = joblib.load(model_path)
+# Load the trained model and encoders
+model = joblib.load("fine_tuned_career_model.pkl")
+role_encoder = joblib.load("role_encoder.pkl")
 
-# Load label encoders (for decoding the target predictions)
-label_encoders = {
-    "Role": LabelEncoder()
-}
+# List of features to collect from user
+features = [
+    "CGPA", "Webdev", "Data_analysis", "Reading_Writing", "Tech_person", "Non_tech_society",
+    "Coding_skills", "Mobile_apps", "Communication", "Specialization_security", "Large_databases",
+    "Data_science", "English_proficiency", "Event_management", "Technical_blogs", "Marketing_interest",
+    "ML_expertise", "Connections", "Live_projects"
+]
 
-# Title
-st.title("Career Prediction Model")
+# Title of the app
+st.title("Career Role Prediction")
 
-# User Input
+# User Input Section
 st.header("Provide Your Details")
 
-# Input fields
-cgpa = st.number_input("CGPA", min_value=0.0, max_value=10.0, step=0.1)
-webdev = st.selectbox("Did you do web development during college?", ["yes", "no"])
-data_analysis = st.selectbox("Are you good at data analysis?", ["yes", "no"])
-reading_writing = st.selectbox("Reading and Writing Skills", ["poor", "medium", "excellent"])
-tech_person = st.selectbox("Are you a tech person?", ["yes", "no"])
-non_tech_society = st.selectbox("Were you in a non-tech society?", ["yes", "no"])
-coding_skills = st.selectbox("Are you good at coding?", ["yes", "no"])
-mobile_apps = st.selectbox("Have you developed mobile apps?", ["yes", "no"])
-communication = st.selectbox("Are you good at communication?", ["yes", "no"])
-specialization_security = st.selectbox("Do you have specialization in security?", ["yes", "no"])
-large_databases = st.selectbox("Have you handled large databases?", ["yes", "no"])
-data_science = st.selectbox("Do you have knowledge of statistics and data science?", ["yes", "no"])
-english_proficiency = st.selectbox("Are you proficient in English?", ["yes", "no"])
-event_management = st.selectbox("Have you managed some event?", ["yes", "no"])
-technical_blogs = st.selectbox("Do you write technical blogs?", ["yes", "no"])
-marketing_interest = st.selectbox("Are you into marketing?", ["yes", "no"])
-ml_expertise = st.selectbox("Are you a machine learning expert?", ["yes", "no"])
-connections = st.selectbox("Do you have a lot of connections?", ["yes", "no"])
-live_projects = st.selectbox("Have you built live projects?", ["yes", "no"])
+# Collect user inputs for all the features
+user_inputs = {}
+for feature in features:
+    if feature in ['CGPA']:
+        user_inputs[feature] = st.number_input(f"{feature} (0 to 10)", min_value=0.0, max_value=10.0, step=0.1)
+    else:
+        user_inputs[feature] = st.selectbox(f"{feature} (yes/no)", ["yes", "no"])
 
-# Collect inputs
-features = pd.DataFrame(
-    {
-        "CGPA": [cgpa],
-        "Did you do webdev during college time ?": [webdev],
-        "Are you good at Data analysis ?": [data_analysis],
-        "reading and writing skills": [reading_writing],
-        "Are you a tech person ?": [tech_person],
-        "Were you in a non tech society ?": [non_tech_society],
-        "Are you good at coding ?": [coding_skills],
-        "Have you developed mobile apps ?": [mobile_apps],
-        "Are you good at communication ?": [communication],
-        "Do you have specialization in security": [specialization_security],
-        "Have you ever handled large databases ?": [large_databases],
-        "Do you have knowlege of statistics and data science?": [data_science],
-        "Are you proficient in English ?": [english_proficiency],
-        "Have you ever managed some event?": [event_management],
-        "Do you write technical blogs ?": [technical_blogs],
-        "Are you into marketing ?": [marketing_interest],
-        "Are you a ML expert ?": [ml_expertise],
-        "Do you have a lot of connections ?": [connections],
-        "Have you ever built live project ?": [live_projects],
-    }
-)
+# Create a DataFrame from the inputs
+input_data = pd.DataFrame([user_inputs])
 
-# Encode categorical features
-for column in features.select_dtypes(include=["object"]).columns:
-    le = label_encoders.get(column, LabelEncoder())
-    features[column] = le.fit_transform(features[column])
+# Encode the features using the saved label encoders
+encoded_data = input_data.copy()
+for column in input_data.select_dtypes(include=['object']).columns:
+    # Use label encoder for each feature column
+    le = joblib.load(f"{column}_encoder.pkl")  # Load encoder for the feature
+    encoded_data[column] = le.transform(input_data[column])
 
-# Standardize numerical features
-scaler = StandardScaler()
-features = scaler.fit_transform(features)
-
-# Predict
+# Predict the role when the button is pressed
 if st.button("Predict Role"):
-    prediction = model.predict(features)  # Encoded prediction
-    # Reverse the encoding to get the original role
-    predicted_role = label_encoders['Role'].inverse_transform(prediction)
+    # Standardize the input data
+    scaler = joblib.load("scaler.pkl")  # Load scaler for feature scaling
+    scaled_data = scaler.transform(encoded_data)
+
+    # Make prediction
+    prediction = model.predict(scaled_data)
+
+    # Decode the predicted role
+    predicted_role = role_encoder.inverse_transform(prediction)
     st.subheader(f"Predicted Role: {predicted_role[0]}")
