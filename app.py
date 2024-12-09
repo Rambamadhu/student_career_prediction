@@ -75,6 +75,6 @@ features = scaler.fit_transform(features)
 # Predict
 if st.button("Predict Role"):
     prediction = model.predict(features)
-    st.subheader(f"Predicted Role: {prediction[0][0]}")
+    st.subheader(f"Predicted Role: {prediction[0]}")
 
 
