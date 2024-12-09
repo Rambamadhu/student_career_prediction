@@ -3,8 +3,9 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# Load the trained model
+# Load the trained model and the label encoder for roles
 model = joblib.load("fine_tuned_career_model.pkl")
+role_encoder = joblib.load("role.pkl")
 
 # List of features to collect from user (assuming your model expects these features)
 features = [
@@ -41,5 +42,8 @@ if st.button("Predict Role"):
     # Make prediction using the model
     prediction = model.predict(input_data_encoded)
 
+    # Decode the predicted role using the role encoder
+    predicted_role = role_encoder.inverse_transform(prediction)
+
     # Display the predicted role
-    st.subheader(f"Predicted Role: {prediction[0]}")
+    st.subheader(f"Predicted Role: {predicted_role[0]}")
