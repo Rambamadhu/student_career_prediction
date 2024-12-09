@@ -8,8 +8,10 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 model_path = "fine_tuned_career_model.pkl"
 model = joblib.load(model_path)
 
-# Load label encoders (if needed for categorical inputs)
-label_encoders = {}
+# Load label encoders (for decoding the target predictions)
+label_encoders = {
+    "Role": LabelEncoder()
+}
 
 # Title
 st.title("Career Prediction Model")
@@ -68,7 +70,7 @@ for column in features.select_dtypes(include=["object"]).columns:
     le = label_encoders.get(column, LabelEncoder())
     features[column] = le.fit_transform(features[column])
 
-# Standardize numerical features (if applicable)
+# Standardize numerical features
 scaler = StandardScaler()
 features = scaler.fit_transform(features)
 
@@ -78,6 +80,3 @@ if st.button("Predict Role"):
     # Reverse the encoding to get the original role
     predicted_role = label_encoders['Role'].inverse_transform(prediction)
     st.subheader(f"Predicted Role: {predicted_role[0]}")
-
-
-
