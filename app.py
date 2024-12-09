@@ -3,11 +3,10 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# Load the trained model and encoders
+# Load the trained model
 model = joblib.load("fine_tuned_career_model.pkl")
-role_encoder = joblib.load("role_encoder.pkl")
 
-# List of features to collect from user
+# List of features to collect from user (assuming your model expects these features)
 features = [
     "CGPA", "Webdev", "Data_analysis", "Reading_Writing", "Tech_person", "Non_tech_society",
     "Coding_skills", "Mobile_apps", "Communication", "Specialization_security", "Large_databases",
@@ -24,30 +23,23 @@ st.header("Provide Your Details")
 # Collect user inputs for all the features
 user_inputs = {}
 for feature in features:
-    if feature in ['CGPA']:
+    if feature == 'CGPA':
         user_inputs[feature] = st.number_input(f"{feature} (0 to 10)", min_value=0.0, max_value=10.0, step=0.1)
     else:
         user_inputs[feature] = st.selectbox(f"{feature} (yes/no)", ["yes", "no"])
 
-# Create a DataFrame from the inputs
+# Convert the inputs into a pandas DataFrame
 input_data = pd.DataFrame([user_inputs])
 
-# Encode the features using the saved label encoders
-encoded_data = input_data.copy()
+# Encode "yes" as 1 and "no" as 0 for non-numeric features
+input_data_encoded = input_data.copy()
 for column in input_data.select_dtypes(include=['object']).columns:
-    # Use label encoder for each feature column
-    le = joblib.load(f"{column}_encoder.pkl")  # Load encoder for the feature
-    encoded_data[column] = le.transform(input_data[column])
+    input_data_encoded[column] = input_data[column].apply(lambda x: 1 if x == "yes" else 0)
 
 # Predict the role when the button is pressed
 if st.button("Predict Role"):
-    # Standardize the input data
-    scaler = joblib.load("scaler.pkl")  # Load scaler for feature scaling
-    scaled_data = scaler.transform(encoded_data)
+    # Make prediction using the model
+    prediction = model.predict(input_data_encoded)
 
-    # Make prediction
-    prediction = model.predict(scaled_data)
-
-    # Decode the predicted role
-    predicted_role = role_encoder.inverse_transform(prediction)
-    st.subheader(f"Predicted Role: {predicted_role[0]}")
+    # Display the predicted role
+    st.subheader(f"Predicted Role: {prediction[0]}")
